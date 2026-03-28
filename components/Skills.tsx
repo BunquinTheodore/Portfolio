@@ -1,6 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Reveal from "@/components/Reveal";
+import SectionHeader from "@/components/SectionHeader";
 import { skillCategories } from "@/data/portfolio";
 
 const containerVariants = {
@@ -18,26 +20,15 @@ const iconVariants = {
 
 export default function Skills() {
   return (
-    <section id="skills" className="py-24 sm:py-32">
-      <div className="mx-auto max-w-6xl px-6">
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="mb-4 text-sm font-medium uppercase tracking-widest text-accent"
-        >
-          Skills & Tech Stack
-        </motion.h2>
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="mb-12 text-2xl font-semibold sm:text-3xl"
-        >
-          Technologies I work with
-        </motion.p>
+    <section id="skills" className="py-24 sm:py-28">
+      <div className="section-wrap">
+        <Reveal>
+          <SectionHeader
+            eyebrow="Skills"
+            title="Tools and technologies I use to build and deliver"
+            description="A balanced stack across frontend, backend, mobile, and data-oriented workflows."
+          />
+        </Reveal>
 
         <motion.div
           variants={containerVariants}
@@ -50,7 +41,7 @@ export default function Skills() {
             <motion.div
               key={cat.title}
               variants={cardVariants}
-              className="rounded-2xl border border-card-border bg-card p-6 transition-colors hover:border-accent/30"
+              className="surface-card rounded-2xl p-6 transition-colors hover:border-accent/30"
             >
               <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted">
                 {cat.title}

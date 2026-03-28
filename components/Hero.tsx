@@ -1,15 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { personal } from "@/data/portfolio";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, Download, CalendarCheck, BriefcaseBusiness } from "lucide-react";
 
 /* ─── Particle canvas ─────────────────────────────────────────── */
-function ParticleBackground() {
+function ParticleBackground({ disabled }: { disabled: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const draw = useCallback(() => {
+    if (disabled) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -27,7 +29,7 @@ function ParticleBackground() {
       alpha: number;
     }
 
-    const particles: Particle[] = Array.from({ length: 60 }, () => ({
+    const particles: Particle[] = Array.from({ length: 42 }, () => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
       r: Math.random() * 2 + 0.5,
@@ -70,9 +72,11 @@ function ParticleBackground() {
     animate();
 
     return () => cancelAnimationFrame(animId);
-  }, []);
+  }, [disabled]);
 
   useEffect(() => {
+    if (disabled) return;
+
     const cleanup = draw();
     const onResize = () => draw();
     window.addEventListener("resize", onResize);
@@ -80,7 +84,11 @@ function ParticleBackground() {
       cleanup?.();
       window.removeEventListener("resize", onResize);
     };
-  }, [draw]);
+  }, [disabled, draw]);
+
+  if (disabled) {
+    return null;
+  }
 
   return (
     <canvas
@@ -101,61 +109,136 @@ const fadeUp = {
 };
 
 export default function Hero() {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
-    <section className="relative flex min-h-screen items-center justify-center overflow-hidden">
-      <ParticleBackground />
+    <section className="relative flex min-h-screen items-center overflow-hidden pt-28 sm:pt-24">
+      <ParticleBackground disabled={!!shouldReduceMotion} />
+
+      <div className="mesh-overlay pointer-events-none absolute inset-0 opacity-45" />
 
       {/* Radial glow */}
-      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-accent/5 blur-3xl" />
+      <div className="pointer-events-none absolute left-1/2 top-1/2 h-150 w-150 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/5 blur-3xl" />
 
       <motion.div
         variants={container}
         initial="hidden"
         animate="show"
-        className="relative z-10 flex flex-col items-center gap-6 px-6 text-center"
+        className="section-wrap relative z-10 grid items-center gap-10 py-10 md:grid-cols-[1.2fr_0.8fr]"
       >
-        <motion.p
-          variants={fadeUp}
-          className="text-sm font-medium uppercase tracking-widest text-accent"
-        >
-          {personal.role}
-        </motion.p>
-
-        <motion.h1
-          variants={fadeUp}
-          className="text-5xl font-bold tracking-tight sm:text-7xl"
-        >
-          {personal.name}
-          <span className="text-accent">.</span>
-        </motion.h1>
-
-        <motion.p
-          variants={fadeUp}
-          className="max-w-md text-lg text-muted sm:text-xl"
-        >
-          {personal.tagline}
-        </motion.p>
-
-        <motion.div variants={fadeUp} className="flex gap-4 pt-4">
-          <a
-            href="#projects"
-            className="rounded-full bg-accent px-6 py-3 text-sm font-semibold text-black transition-all hover:bg-accent-dark hover:shadow-lg hover:shadow-accent/25"
+        <div className="text-center md:text-left">
+          <motion.p
+            variants={fadeUp}
+            className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-accent"
           >
-            View Projects
-          </a>
-          <a
-            href="#contact"
-            className="rounded-full border border-card-border px-6 py-3 text-sm font-semibold text-foreground transition-all hover:border-accent hover:text-accent"
+            {personal.role}
+          </motion.p>
+
+          <motion.h1
+            variants={fadeUp}
+            className="text-balance text-4xl font-bold tracking-tight sm:text-6xl"
           >
-            Get in Touch
-          </a>
-        </motion.div>
+            {personal.name}
+            <span className="text-accent">.</span>
+          </motion.h1>
+
+          <motion.p
+            variants={fadeUp}
+            className="mx-auto mt-5 max-w-2xl text-pretty text-base leading-relaxed text-muted sm:text-lg md:mx-0"
+          >
+            {personal.tagline}
+          </motion.p>
+
+          <motion.p variants={fadeUp} className="mt-5 text-sm font-medium text-accent">
+            {personal.availability}
+          </motion.p>
+
+          <motion.div
+            variants={fadeUp}
+            className="mt-7 flex flex-wrap justify-center gap-3 md:justify-start"
+          >
+            <a
+              href={personal.cvFile}
+              download
+              className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 text-sm font-semibold text-black transition-all hover:bg-accent-dark"
+            >
+              <Download size={16} />
+              Download CV
+            </a>
+            <a
+              href="#projects"
+              className="rounded-full border border-card-border px-5 py-3 text-sm font-semibold text-foreground transition-all hover:border-accent hover:text-accent"
+            >
+              View Projects
+            </a>
+            <a
+              href="#contact"
+              className="rounded-full border border-card-border px-5 py-3 text-sm font-semibold text-foreground transition-all hover:border-accent hover:text-accent"
+            >
+              Contact Me
+            </a>
+          </motion.div>
+        </div>
+
+        <motion.aside
+          variants={fadeUp}
+          className="surface-card rounded-3xl p-6 md:p-7"
+        >
+          <p className="mb-5 text-sm font-semibold uppercase tracking-wider text-accent">
+            Quick Snapshot
+          </p>
+          <div className="grid gap-4">
+            <div className="rounded-2xl border border-card-border/80 bg-background/70 p-4">
+              <p className="text-xs uppercase tracking-wider text-muted">
+                Focus
+              </p>
+              <p className="mt-1 text-sm font-semibold text-foreground">
+                Full Stack Apps, Data-Driven Features, Business Tools
+              </p>
+            </div>
+            <div className="rounded-2xl border border-card-border/80 bg-background/70 p-4">
+              <p className="text-xs uppercase tracking-wider text-muted">
+                Current Goal
+              </p>
+              <p className="mt-1 text-sm font-semibold text-foreground">
+                Internship + client commissions with measurable outcomes
+              </p>
+            </div>
+            <div className="rounded-2xl border border-card-border/80 bg-background/70 p-4">
+              <p className="text-xs uppercase tracking-wider text-muted">
+                Based In
+              </p>
+              <p className="mt-1 text-sm font-semibold text-foreground">
+                Philippines
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-2 text-sm text-muted">
+            <a
+              href={personal.consultationUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 transition-colors hover:text-accent"
+            >
+              <CalendarCheck size={16} />
+              Book Consultation
+            </a>
+            <a
+              href="#contact"
+              className="inline-flex items-center gap-2 transition-colors hover:text-accent"
+            >
+              <BriefcaseBusiness size={16} />
+              Hire for Project Work
+            </a>
+          </div>
+        </motion.aside>
 
         <motion.div
           variants={fadeUp}
-          className="mt-12"
-          animate={{ y: [0, 8, 0] }}
-          transition={{ repeat: Infinity, duration: 2 }}
+          className="col-span-full mt-2 flex justify-center"
+          animate={shouldReduceMotion ? undefined : { y: [0, 8, 0] }}
+          transition={shouldReduceMotion ? undefined : { repeat: Infinity, duration: 2 }}
         >
           <ArrowDown size={20} className="text-muted" />
         </motion.div>

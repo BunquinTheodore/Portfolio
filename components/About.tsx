@@ -1,55 +1,40 @@
 "use client";
 
-import { motion } from "framer-motion";
+import Reveal from "@/components/Reveal";
+import SectionHeader from "@/components/SectionHeader";
 import { personal } from "@/data/portfolio";
 import { MapPin, GraduationCap } from "lucide-react";
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: "easeOut" as const } },
-};
-
 export default function About() {
   return (
-    <section id="about" className="py-24 sm:py-32">
-      <div className="mx-auto max-w-4xl px-6">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
-          variants={{
-            visible: { transition: { staggerChildren: 0.15 } },
-          }}
-          className="flex flex-col gap-8"
-        >
-          <motion.h2
-            variants={fadeUp}
-            className="text-sm font-medium uppercase tracking-widest text-accent"
-          >
-            About Me
-          </motion.h2>
+    <section id="about" className="py-24 sm:py-28">
+      <div className="section-wrap">
+        <Reveal>
+          <SectionHeader
+            eyebrow="About"
+            title="I build practical, polished solutions for real users"
+            description="I focus on software that solves immediate problems and scales with the people using it."
+          />
+        </Reveal>
 
-          <motion.p
-            variants={fadeUp}
-            className="text-2xl font-semibold leading-relaxed sm:text-3xl"
-          >
-            {personal.bio}
-          </motion.p>
+        <Reveal delay={0.05}>
+          <article className="surface-card rounded-3xl p-7 sm:p-9">
+            <p className="text-pretty text-lg leading-relaxed text-foreground sm:text-xl">
+              {personal.bio}
+            </p>
 
-          <motion.div
-            variants={fadeUp}
-            className="mt-2 flex flex-wrap gap-4 text-sm text-muted"
-          >
-            <span className="flex items-center gap-2">
-              <MapPin size={16} className="text-accent" />
-              {personal.location}
-            </span>
-            <span className="flex items-center gap-2">
-              <GraduationCap size={16} className="text-accent" />
-              {personal.year} — {personal.university}
-            </span>
-          </motion.div>
-        </motion.div>
+            <div className="mt-7 flex flex-wrap gap-3 text-sm text-muted">
+              <span className="inline-flex items-center gap-2 rounded-full border border-card-border bg-background/80 px-4 py-2">
+                <MapPin size={16} className="text-accent" />
+                {personal.location}
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-card-border bg-background/80 px-4 py-2">
+                <GraduationCap size={16} className="text-accent" />
+                {personal.year} — {personal.university}
+              </span>
+            </div>
+          </article>
+        </Reveal>
       </div>
     </section>
   );
