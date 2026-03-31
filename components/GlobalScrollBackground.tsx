@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   motion,
   useMotionTemplate,
@@ -11,7 +12,34 @@ import {
 
 export default function GlobalScrollBackground() {
   const reduceMotion = useReducedMotion();
+  const [performanceMode, setPerformanceMode] = useState(false);
   const { scrollYProgress } = useScroll();
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const evaluate = () => {
+      const smallScreen = window.matchMedia("(max-width: 1024px)").matches;
+      const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+      const memory =
+        "deviceMemory" in navigator
+          ? Number((navigator as Navigator & { deviceMemory?: number }).deviceMemory)
+          : undefined;
+      const cores = navigator.hardwareConcurrency;
+      const lowPower = (memory !== undefined && memory <= 4) || cores <= 4;
+
+      setPerformanceMode(smallScreen || coarsePointer || lowPower);
+    };
+
+    evaluate();
+    window.addEventListener("resize", evaluate);
+
+    return () => {
+      window.removeEventListener("resize", evaluate);
+    };
+  }, []);
 
   const smooth = useSpring(scrollYProgress, {
     stiffness: 70,
@@ -34,10 +62,10 @@ export default function GlobalScrollBackground() {
   const gridOpacity = useTransform(smooth, [0, 1], [0.16, 0.28]);
   const gridFilter = useMotionTemplate`blur(${useTransform(smooth, [0, 1], [0.2, 1.4])}px)`;
 
-  if (reduceMotion) {
+  if (reduceMotion || performanceMode) {
     return (
       <div className="pointer-events-none fixed inset-0 z-[-1] overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(0,191,255,0.16),transparent_40%),radial-gradient(circle_at_80%_70%,rgba(0,130,255,0.12),transparent_46%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(0,191,255,0.1),transparent_42%),radial-gradient(circle_at_80%_70%,rgba(0,130,255,0.08),transparent_48%)]" />
       </div>
     );
   }

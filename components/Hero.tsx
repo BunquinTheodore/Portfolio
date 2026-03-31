@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { personal } from "@/data/portfolio";
 import { ArrowDown, Download, CalendarCheck, BriefcaseBusiness } from "lucide-react";
@@ -9,16 +9,20 @@ import { ArrowDown, Download, CalendarCheck, BriefcaseBusiness } from "lucide-re
 function ParticleBackground({ disabled }: { disabled: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const draw = useCallback(() => {
-    if (disabled) return;
+  useEffect(() => {
+    if (disabled) {
+      return;
+    }
 
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!canvas) {
+      return;
+    }
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      return;
+    }
 
     interface Particle {
       x: number;
@@ -29,62 +33,76 @@ function ParticleBackground({ disabled }: { disabled: boolean }) {
       alpha: number;
     }
 
-    const particles: Particle[] = Array.from({ length: 42 }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      r: Math.random() * 2 + 0.5,
-      dx: (Math.random() - 0.5) * 0.4,
-      dy: (Math.random() - 0.5) * 0.4,
-      alpha: Math.random() * 0.5 + 0.1,
+    const particleCount = 28;
+    const particles: Particle[] = Array.from({ length: particleCount }, () => ({
+      x: 0,
+      y: 0,
+      r: Math.random() * 1.8 + 0.4,
+      dx: (Math.random() - 0.5) * 0.32,
+      dy: (Math.random() - 0.5) * 0.32,
+      alpha: Math.random() * 0.4 + 0.08,
     }));
 
-    let animId: number;
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      for (const p of particles) {
+        if (p.x === 0 && p.y === 0) {
+          p.x = Math.random() * canvas.width;
+          p.y = Math.random() * canvas.height;
+        } else {
+          p.x = Math.min(canvas.width, Math.max(0, p.x));
+          p.y = Math.min(canvas.height, Math.max(0, p.y));
+        }
+      }
+    };
+
+    resizeCanvas();
+
+    let animId = 0;
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
       for (const p of particles) {
         p.x += p.dx;
         p.y += p.dy;
         if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
         if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(0, 191, 255, ${p.alpha})`;
         ctx.fill();
       }
-      // draw connections
+
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x;
           const dy = particles[i].y - particles[j].y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 120) {
+          if (dist < 95) {
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(0, 191, 255, ${0.08 * (1 - dist / 120)})`;
+            ctx.strokeStyle = `rgba(0, 191, 255, ${0.06 * (1 - dist / 95)})`;
             ctx.lineWidth = 0.5;
             ctx.stroke();
           }
         }
       }
+
       animId = requestAnimationFrame(animate);
     };
-    animate();
 
-    return () => cancelAnimationFrame(animId);
-  }, [disabled]);
+    animId = requestAnimationFrame(animate);
+    window.addEventListener("resize", resizeCanvas, { passive: true });
 
-  useEffect(() => {
-    if (disabled) return;
-
-    const cleanup = draw();
-    const onResize = () => draw();
-    window.addEventListener("resize", onResize);
     return () => {
-      cleanup?.();
-      window.removeEventListener("resize", onResize);
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", resizeCanvas);
     };
-  }, [disabled, draw]);
+  }, [disabled]);
 
   if (disabled) {
     return null;
@@ -110,10 +128,36 @@ const fadeUp = {
 
 export default function Hero() {
   const shouldReduceMotion = useReducedMotion();
+  const [performanceMode, setPerformanceMode] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const evaluate = () => {
+      const smallScreen = window.matchMedia("(max-width: 1024px)").matches;
+      const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+      const memory =
+        "deviceMemory" in navigator
+          ? Number((navigator as Navigator & { deviceMemory?: number }).deviceMemory)
+          : undefined;
+      const cores = navigator.hardwareConcurrency;
+      const lowPower = (memory !== undefined && memory <= 4) || cores <= 4;
+
+      setPerformanceMode(smallScreen || coarsePointer || lowPower);
+    };
+
+    evaluate();
+    window.addEventListener("resize", evaluate);
+    return () => {
+      window.removeEventListener("resize", evaluate);
+    };
+  }, []);
 
   return (
     <section className="relative flex min-h-screen items-center overflow-hidden pt-28 sm:pt-24">
-      <ParticleBackground disabled={!!shouldReduceMotion} />
+      <ParticleBackground disabled={!!shouldReduceMotion || performanceMode} />
 
       <div className="mesh-overlay pointer-events-none absolute inset-0 opacity-45" />
 

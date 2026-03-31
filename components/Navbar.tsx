@@ -31,7 +31,15 @@ export default function Navbar() {
   const showDarkModeIcon = isClient ? currentTheme === "dark" : false;
 
   useEffect(() => {
+    let ticking = false;
+
     const onScroll = () => {
+      if (ticking) {
+        return;
+      }
+
+      ticking = true;
+      requestAnimationFrame(() => {
       const y = window.scrollY;
       const max =
         document.documentElement.scrollHeight - window.innerHeight || 1;
@@ -50,9 +58,11 @@ export default function Navbar() {
         }
       }
       setActiveHref(current);
+        ticking = false;
+      });
     };
 
-    window.addEventListener("scroll", onScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   motion,
   useMotionTemplate,
@@ -51,6 +51,34 @@ const MAZE_COORDS: Array<{ x: number; y: number }> = [
 export default function CinematicPortfolio() {
   const reduceMotion = useReducedMotion();
   const trackRef = useRef<HTMLElement | null>(null);
+  const [performanceMode, setPerformanceMode] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const evaluate = () => {
+      const smallScreen = window.matchMedia("(max-width: 1024px)").matches;
+      const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const memory =
+        "deviceMemory" in navigator
+          ? Number((navigator as Navigator & { deviceMemory?: number }).deviceMemory)
+          : undefined;
+      const cores = navigator.hardwareConcurrency;
+      const lowPower = (memory !== undefined && memory <= 4) || cores <= 4;
+
+      setPerformanceMode(smallScreen || coarsePointer || reduce || lowPower);
+    };
+
+    evaluate();
+    window.addEventListener("resize", evaluate);
+
+    return () => {
+      window.removeEventListener("resize", evaluate);
+    };
+  }, []);
 
   const totalScenes = SCENES.length;
   const totalScrollVh = totalScenes * 240;
@@ -464,19 +492,19 @@ export default function CinematicPortfolio() {
     </section>
   );
 
+  const stackedLayout = (
+    <div>
+      {SCENES.map((scene) => (
+        <section key={`stack-${scene.id}`} id={scene.anchorId}>
+          {scene.node}
+        </section>
+      ))}
+    </div>
+  );
+
   return (
     <main className="horizontal-maze overflow-x-clip">
-      {reduceMotion ? (
-        <div>
-          {SCENES.map((scene) => (
-            <section key={`stack-${scene.id}`} id={scene.anchorId}>
-              {scene.node}
-            </section>
-          ))}
-        </div>
-      ) : (
-        horizontalTrack
-      )}
+      {reduceMotion || performanceMode ? stackedLayout : horizontalTrack}
     </main>
   );
 }
