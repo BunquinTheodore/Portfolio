@@ -32,13 +32,14 @@ export default function Navbar() {
 
   useEffect(() => {
     let ticking = false;
+    const sections = navLinks
+      .map((link) => document.querySelector(link.href) as HTMLElement | null)
+      .filter(Boolean);
 
     const onScroll = () => {
-      if (ticking) {
-        return;
-      }
-
+      if (ticking) return;
       ticking = true;
+
       requestAnimationFrame(() => {
       const y = window.scrollY;
       const max =
@@ -47,22 +48,22 @@ export default function Navbar() {
       setScrollProgress(Math.min(1, Math.max(0, y / max)));
 
       let current = "#about";
-      for (const link of navLinks) {
-        const el = document.querySelector(link.href);
+      for (let i = 0; i < sections.length; i++) {
+        const el = sections[i];
         if (!el) continue;
 
         const rect = el.getBoundingClientRect();
         if (rect.top <= 140 && rect.bottom >= 140) {
-          current = link.href;
+          current = navLinks[i].href;
           break;
         }
       }
       setActiveHref(current);
-        ticking = false;
+      ticking = false;
       });
     };
 
-    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("scroll", onScroll);
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);

@@ -51,38 +51,22 @@ const MAZE_COORDS: Array<{ x: number; y: number }> = [
 export default function CinematicPortfolio() {
   const reduceMotion = useReducedMotion();
   const trackRef = useRef<HTMLElement | null>(null);
-  const [performanceMode, setPerformanceMode] = useState(false);
+  const [isMobilePerf, setIsMobilePerf] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
+    const mq = window.matchMedia("(max-width: 1024px), (pointer: coarse)");
+    const onChange = () => setIsMobilePerf(mq.matches);
 
-    const evaluate = () => {
-      const smallScreen = window.matchMedia("(max-width: 1024px)").matches;
-      const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
-      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const memory =
-        "deviceMemory" in navigator
-          ? Number((navigator as Navigator & { deviceMemory?: number }).deviceMemory)
-          : undefined;
-      const cores = navigator.hardwareConcurrency;
-      const lowPower = (memory !== undefined && memory <= 4) || cores <= 4;
-
-      setPerformanceMode(smallScreen || coarsePointer || reduce || lowPower);
-    };
-
-    evaluate();
-    window.addEventListener("resize", evaluate);
-
-    return () => {
-      window.removeEventListener("resize", evaluate);
-    };
+    onChange();
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
   }, []);
 
+  const lowPerfMode = isMobilePerf;
+
   const totalScenes = SCENES.length;
-  const totalScrollVh = totalScenes * 240;
-  const gridStep = 165;
+  const totalScrollVh = totalScenes * (lowPerfMode ? 185 : 240);
+  const gridStep = lowPerfMode ? 150 : 165;
 
   const minX = Math.min(...MAZE_COORDS.map((p) => p.x));
   const maxX = Math.max(...MAZE_COORDS.map((p) => p.x));
@@ -218,7 +202,11 @@ export default function CinematicPortfolio() {
   const trackX = useMotionTemplate`${smoothCameraX}vw`;
   const trackY = useMotionTemplate`${smoothCameraY}vh`;
 
-  const trackScale = useTransform(routedProgress, [0, 0.08, 1], [0.985, 1, 1]);
+  const trackScale = useTransform(
+    routedProgress,
+    [0, 0.08, 1],
+    lowPerfMode ? [0.995, 1, 1] : [0.985, 1, 1],
+  );
 
   const smoothScale = useSpring(trackScale, {
     stiffness: 90,
@@ -272,7 +260,7 @@ export default function CinematicPortfolio() {
   const wormLength = useTransform(
     routedProgress,
     [0, 0.16, 0.42, 0.7, 1],
-    [120, 220, 360, 520, 700],
+    lowPerfMode ? [88, 150, 220, 300, 380] : [120, 220, 360, 520, 700],
   );
   const wormLengthPx = useMotionTemplate`${wormLength}px`;
   const wormHalfLengthPx = useMotionTemplate`${useTransform(wormLength, (v) => -v / 2)}px`;
@@ -288,10 +276,26 @@ export default function CinematicPortfolio() {
   const wormStretchX = useTransform(directionX, (v) => 1 + Math.abs(v) * 0.16);
   const wormStretchY = useTransform(directionY, (v) => 1 + Math.abs(v) * 0.16);
   const wormBreath = useTransform(scrollYProgress, [0, 0.5, 1], [0.96, 1.04, 0.98]);
-  const wormTurnScale = useTransform(smoothTurnPulse, [0, 1], [1, 1.16]);
-  const wormTurnGlow = useTransform(smoothTurnPulse, [0, 1], [1, 1.65]);
-  const wormTurnHeadScale = useTransform(smoothTurnPulse, [0, 1], [1, 1.12]);
-  const wormTurnTailFade = useTransform(smoothTurnPulse, [0, 1], [1, 0.72]);
+  const wormTurnScale = useTransform(
+    smoothTurnPulse,
+    [0, 1],
+    lowPerfMode ? [1, 1.08] : [1, 1.16],
+  );
+  const wormTurnGlow = useTransform(
+    smoothTurnPulse,
+    [0, 1],
+    lowPerfMode ? [1, 1.2] : [1, 1.65],
+  );
+  const wormTurnHeadScale = useTransform(
+    smoothTurnPulse,
+    [0, 1],
+    lowPerfMode ? [1, 1.06] : [1, 1.12],
+  );
+  const wormTurnTailFade = useTransform(
+    smoothTurnPulse,
+    [0, 1],
+    lowPerfMode ? [1, 0.82] : [1, 0.72],
+  );
 
   const vignetteOpacity = useTransform(
     scrollYProgress,
@@ -331,38 +335,42 @@ export default function CinematicPortfolio() {
           }}
         />
 
-        <motion.div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0"
-          style={{
-            x: bgLayer2X,
-            y: bgLayer2Y,
-            width: `${totalScenes * 140}vw`,
-            height: `${(maxY - minY + 2) * 100}vh`,
-            left: "-45vw",
-            top: "-45vh",
-            opacity: 0.72,
-            background:
-              "radial-gradient(circle at 16% 25%, rgba(0,191,255,0.24), transparent 24%), radial-gradient(circle at 38% 68%, rgba(0,145,255,0.18), transparent 28%), radial-gradient(circle at 67% 34%, rgba(0,191,255,0.2), transparent 26%), radial-gradient(circle at 89% 70%, rgba(0,136,255,0.16), transparent 32%)",
-          }}
-        />
+        {!lowPerfMode && (
+          <motion.div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0"
+            style={{
+              x: bgLayer2X,
+              y: bgLayer2Y,
+              width: `${totalScenes * 140}vw`,
+              height: `${(maxY - minY + 2) * 100}vh`,
+              left: "-45vw",
+              top: "-45vh",
+              opacity: 0.72,
+              background:
+                "radial-gradient(circle at 16% 25%, rgba(0,191,255,0.24), transparent 24%), radial-gradient(circle at 38% 68%, rgba(0,145,255,0.18), transparent 28%), radial-gradient(circle at 67% 34%, rgba(0,191,255,0.2), transparent 26%), radial-gradient(circle at 89% 70%, rgba(0,136,255,0.16), transparent 32%)",
+            }}
+          />
+        )}
 
-        <motion.div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0"
-          style={{
-            x: bgLayer3X,
-            y: bgLayer3Y,
-            width: `${totalScenes * 160}vw`,
-            height: `${(maxY - minY + 2) * 100}vh`,
-            left: "-50vw",
-            top: "-50vh",
-            opacity: 0.34,
-            backgroundImage:
-              "linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px)",
-            backgroundSize: "90px 90px",
-          }}
-        />
+        {!lowPerfMode && (
+          <motion.div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0"
+            style={{
+              x: bgLayer3X,
+              y: bgLayer3Y,
+              width: `${totalScenes * 160}vw`,
+              height: `${(maxY - minY + 2) * 100}vh`,
+              left: "-50vw",
+              top: "-50vh",
+              opacity: 0.34,
+              backgroundImage:
+                "linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px)",
+              backgroundSize: "90px 90px",
+            }}
+          />
+        )}
 
         <motion.div
           aria-hidden="true"
@@ -400,20 +408,24 @@ export default function CinematicPortfolio() {
                 background:
                   "linear-gradient(90deg, rgba(24,98,244,0.96) 0%, rgba(0,191,255,0.98) 44%, rgba(98,231,255,1) 74%, rgba(186,246,255,0.94) 100%)",
                 boxShadow:
-                  "0 0 0 1px rgba(150,238,255,0.32), 0 0 34px rgba(0,170,255,0.52)",
+                  lowPerfMode
+                    ? "0 0 0 1px rgba(150,238,255,0.24), 0 0 18px rgba(0,170,255,0.34)"
+                    : "0 0 0 1px rgba(150,238,255,0.32), 0 0 34px rgba(0,170,255,0.52)",
               }}
             />
 
-            <motion.div
-              className="absolute left-0 top-1/2 h-3 -translate-y-1/2 rounded-full"
-              style={{
-                width: wormBodyWidthPx,
-                opacity: 0.58,
-                background:
-                  "linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(186,242,255,0.66) 52%, rgba(255,255,255,0.08) 100%)",
-                filter: "blur(0.6px)",
-              }}
-            />
+            {!lowPerfMode && (
+              <motion.div
+                className="absolute left-0 top-1/2 h-3 -translate-y-1/2 rounded-full"
+                style={{
+                  width: wormBodyWidthPx,
+                  opacity: 0.58,
+                  background:
+                    "linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(186,242,255,0.66) 52%, rgba(255,255,255,0.08) 100%)",
+                  filter: "blur(0.6px)",
+                }}
+              />
+            )}
 
             <motion.div
               className="absolute top-1/2 h-0 w-0 -translate-y-1/2"
@@ -423,7 +435,9 @@ export default function CinematicPortfolio() {
                 borderTop: "22px solid transparent",
                 borderBottom: "22px solid transparent",
                 borderLeft: "62px solid rgba(150, 243, 255, 0.98)",
-                filter: "drop-shadow(0 0 18px rgba(55, 200, 255, 0.8))",
+                filter: lowPerfMode
+                  ? "drop-shadow(0 0 8px rgba(55, 200, 255, 0.55))"
+                  : "drop-shadow(0 0 18px rgba(55, 200, 255, 0.8))",
               }}
             />
 
@@ -492,19 +506,19 @@ export default function CinematicPortfolio() {
     </section>
   );
 
-  const stackedLayout = (
-    <div>
-      {SCENES.map((scene) => (
-        <section key={`stack-${scene.id}`} id={scene.anchorId}>
-          {scene.node}
-        </section>
-      ))}
-    </div>
-  );
-
   return (
     <main className="horizontal-maze overflow-x-clip">
-      {reduceMotion || performanceMode ? stackedLayout : horizontalTrack}
+      {reduceMotion ? (
+        <div>
+          {SCENES.map((scene) => (
+            <section key={`stack-${scene.id}`} id={scene.anchorId}>
+              {scene.node}
+            </section>
+          ))}
+        </div>
+      ) : (
+        horizontalTrack
+      )}
     </main>
   );
 }
