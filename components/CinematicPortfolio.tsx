@@ -12,6 +12,7 @@ import {
 import About from "@/components/About";
 import Achievements from "@/components/Achievements";
 import Blog from "@/components/Blog";
+import Certifications from "@/components/Certifications";
 import Contact from "@/components/Contact";
 import Experience from "@/components/Experience";
 import Goals from "@/components/Goals";
@@ -32,6 +33,11 @@ const SCENES = [
     node: <Achievements />,
   },
   { id: "scene-goals", anchorId: "goals", node: <Goals /> },
+  {
+    id: "scene-certifications",
+    anchorId: "certifications",
+    node: <Certifications />,
+  },
   { id: "scene-contact", anchorId: "contact", node: <Contact /> },
 ];
 
@@ -46,6 +52,7 @@ const MAZE_COORDS: Array<{ x: number; y: number }> = [
   { x: 2, y: -2 },
   { x: 2, y: -1 },
   { x: 2, y: 0 },
+  { x: 3, y: 0 },
 ];
 
 export default function CinematicPortfolio() {
